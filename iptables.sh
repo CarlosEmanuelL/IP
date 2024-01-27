@@ -32,9 +32,9 @@ collect_ips_and_ports() {
         	;;
 	esac
 
-	echo "Digite as portas de gerencia que deseja bloquear (separadas por espaço):"
+	echo "Digite as portas de gerencia que deseja bloquear (separadas por espaço) | para range use o formato portaInicial:portaFinal:"
 	read -a portas_gerencia_a_bloquear
-	echo "Digite as portas de servico que deseja bloquear (separadas por espaço):"
+	echo "Digite as portas de servico que deseja bloquear (separadas por espaço) | para range use o formato portaInicial:portaFinal:"
 	read -a portas_a_bloquear
 
 	# Agora você pode usar ${ips_origem_mng[@]}, ${range_origem_mng[@]}, ${ips_origem[@]} e ${range_origem[@]} onde necessário.
@@ -48,7 +48,7 @@ create_rc_local() {
     if [[ -f "$rc_local" ]]; then
    	 echo "O arquivo $rc_local já existe."
    	 echo "Criando o arquivo $rc_local com o script necessário..."
-   	 sleep 2s
+   	 sleep 1s
 
    	 # Cria o arquivo com o script
    	 echo -e "$script_line" | sudo tee "$rc_local" > /dev/null
@@ -58,7 +58,7 @@ create_rc_local() {
 
     else
    	 echo "Criando o arquivo $rc_local com o script necessário..."
-   	 sleep 2s
+   	 sleep 1s
 
    	 # Cria o arquivo com o script
    	 echo -e "$script_line" | sudo tee "$rc_local" > /dev/null
@@ -79,7 +79,7 @@ create_rc_local_service() {
     if [[ -f "$service_file" ]]; then
    	 echo "O serviço rc-local.service já existe."
    	 echo "Subscrevendo o arquivo já existente..."
-   	 sleep 2s
+   	 sleep 1s
 
    	 # Conteúdo do arquivo de serviço rc-local.service
    	 local service_content="[Unit]
@@ -160,7 +160,7 @@ install_script() {
     if [[ -f "$script_path" ]]; then
    	 echo "O script $script_name já existe em $script_path."
    	 echo "Subscrevendo o script em $script_path..."
-   	 sleep 2s
+   	 sleep 1s
 
    	 # Copia o script para /usr/local/bin
    	 sudo cp "$0" "$script_path"
@@ -172,7 +172,7 @@ install_script() {
    	 echo "  "
     else
    	 echo "Instalando o script em $script_path..."
-   	 sleep 2s
+   	 sleep 1s
 
    	 # Copia o script para /usr/local/bin
    	 sudo cp "$0" "$script_path"
@@ -188,7 +188,7 @@ install_script() {
 # Função para desinstalar os serviços
 uninstall_services() {
 	echo "Desinstalando serviços..."
-	sleep 2s
+	sleep 1s
 
 	# Comente a linha que executa o seu script no arquivo /etc/rc.local
 	sudo sed -i '/\/usr\/local\/bin\/iptables.sh start/s/^/#/' /etc/rc.local
@@ -213,7 +213,7 @@ start(){
     collect_ips_and_ports
 
     echo "Startando Regras Iptables.."
-    sleep 2s
+    sleep 1s
 
     # Limpar todas as regras existentes
     iptables -F
@@ -228,9 +228,9 @@ start(){
     # Permitir tráfego para as portas de Gerencia Web e SSH, para os IPs de origem especificados variavel ips_origem_
     for ip in "${ips_origem_mng[@]}"; do
     	for porta in "${portas_gerencia_a_bloquear[@]}"; do
-   		 if [[ $porta == *":"* ]]; then
+   		    if [[ $porta == *":"* ]]; then
             	iptables -A INPUT -p tcp -m multiport --dports "$porta" -i "$interface" -s "$ip" -j ACCEPT
-        	else
+            else
             	iptables -A INPUT -p tcp --dport "$porta" -i "$interface" -s "$ip" -j ACCEPT
         	fi
       	#  iptables -A INPUT -p tcp --dport "$porta" -i "$interface" -s "$ip" -j ACCEPT
@@ -238,7 +238,7 @@ start(){
 	done
     for range in "${range_origem_mng[@]}"; do
     	for porta in "${portas_gerencia_a_bloquear[@]}"; do
-   		 if [[ $porta == *":"* ]]; then
+   		    if [[ $porta == *":"* ]]; then
             	iptables -A INPUT -p tcp -m multiport --dports "$porta" -i "$interface" -s "$ip" -j ACCEPT
         	else
             	iptables -A INPUT -p tcp --dport "$porta" -i "$interface" -s "$ip" -j ACCEPT
@@ -250,7 +250,7 @@ start(){
     # Permitir tráfego local para a portas do servico, para os IPs de origem especificados variavel ips_origem
     for ip in "${ips_origem[@]}"; do
     	for porta in "${portas_a_bloquear[@]}"; do
-   		 if [[ $porta == *":"* ]]; then
+   		    if [[ $porta == *":"* ]]; then
             	iptables -A INPUT -p tcp -m multiport --dports "$porta" -i "$interface" -s "$ip" -j ACCEPT
         	else
             	iptables -A INPUT -p tcp --dport "$porta" -i "$interface" -s "$ip" -j ACCEPT
@@ -260,7 +260,7 @@ start(){
 	done
     for ip in "${range_origem[@]}"; do
     	for porta in "${portas_a_bloquear[@]}"; do
-   		 if [[ $porta == *":"* ]]; then
+   		    if [[ $porta == *":"* ]]; then
             	iptables -A INPUT -p tcp -m multiport --dports "$porta" -i "$interface" -s "$ip" -j ACCEPT
         	else
             	iptables -A INPUT -p tcp --dport "$porta" -i "$interface" -s "$ip" -j ACCEPT
@@ -271,20 +271,20 @@ start(){
 
     # Negar todo o tráfego por padrão para portas de gerencia
     for porta in "${portas_gerencia_a_bloquear[@]}"; do
-   	 if [[ $porta == *":"* ]]; then
-   		 iptables -A INPUT -p tcp -m multiport --dports "$porta" -i "$interface" -j DROP
-   	 else
-   		 iptables -A INPUT -p tcp --dport "$porta" -i "$interface" -j DROP
-   	 fi
+   	    if [[ $porta == *":"* ]]; then
+   		    iptables -A INPUT -p tcp -m multiport --dports "$porta" -i "$interface" -j DROP
+   	    else
+   		    iptables -A INPUT -p tcp --dport "$porta" -i "$interface" -j DROP
+   	    fi
    	# iptables -A INPUT -p tcp --dport "$porta" -i "$interface" -j DROP
 	done
 	# Negar todo o tráfego por padrão para portas de servico
 	for porta in "${portas_a_bloquear[@]}"; do
-   	 if [[ $porta == *":"* ]]; then
-   		 iptables -A INPUT -p tcp -m multiport --dports "$porta" -i "$interface" -j DROP
-   	 else
-   		 iptables -A INPUT -p tcp --dport "$porta" -i "$interface" -j DROP
-   	 fi
+   	    if [[ $porta == *":"* ]]; then
+   		    iptables -A INPUT -p tcp -m multiport --dports "$porta" -i "$interface" -j DROP
+   	    else
+   		    iptables -A INPUT -p tcp --dport "$porta" -i "$interface" -j DROP
+   	    fi
   	#  iptables -A INPUT -p tcp --dport "$porta" -i "$interface" -j DROP
 	done
 }
@@ -301,7 +301,7 @@ case "$1" in
    	 ;;
     stop)
    	 echo "Stoppando regras Iptables..."
-    	sleep 2s
+    	sleep 1s
    	 iptables -F
    	 ;;
     list)
@@ -312,9 +312,9 @@ case "$1" in
    	 ;;
 	 install)
    	 echo "Instalando servico..."
-    	sleep 2s
+    	sleep 1s
     	echo "Criando arquivo /etc/rc.local"
-    	sleep 2s
+    	sleep 1s
    	 create_rc_local
    	 create_rc_local_service
    	 install_script
